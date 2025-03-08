@@ -24,6 +24,7 @@ def login():
         "access_token": access_token,
         "user_id": user.user_id,
         "role": user.role
+        
     }), 200
 
 @bp.route('/protected', methods=['GET'])

@@ -8,9 +8,11 @@ from api import (
     auth_api  # 新增 auth_api
 )
 from sqlalchemy import text
+from flask_cors import CORS  # 导入 CORS
 
 # 初始化 Flask 应用
 app = Flask(__name__)
+CORS(app)  # 启用 CORS 支持
 
 # 数据库配置
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI

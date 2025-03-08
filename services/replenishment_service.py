@@ -2,6 +2,7 @@
 from models.replenishment_orders import ReplenishmentOrder
 from models.db import db
 from datetime import datetime
+from sqlalchemy import and_
 
 def get_low_stock_items(threshold):
     """
@@ -18,32 +19,45 @@ def create_replenishment_order(item_id, order_quantity):
     """
     创建补货订单，而不是直接增加库存
     """
-    item = Inventory.query.filter_by(item_id=item_id).one_or_none()
-    
-    if not item:
-        return None, "商品不存在"
+    try:
+        # 检查商品是否存在
+        item = Inventory.query.filter_by(item_id=item_id).one_or_none()
+        if not item:
+            return None, "商品不存在"
 
-    # 避免重复创建订单
-    existing_order = ReplenishmentOrder.query.filter_by(item_id=item_id, status="pending").first()
-    if existing_order:
-        return None, "已有待处理订单"
+        # 使用事务锁避免重复创建订单
+        with db.session.begin_nested():
+            # 检查是否有待处理的订单
+            existing_order = ReplenishmentOrder.query.filter(
+                and_(
+                    ReplenishmentOrder.item_id == item_id,
+                    ReplenishmentOrder.status == "pending"
+                )
+            ).with_for_update().first()  # 加锁，防止并发问题
 
-    new_order = ReplenishmentOrder(
-        item_id=item_id,
-        order_quantity=order_quantity,
-        order_date=datetime.utcnow(),
-        status="pending"  # 默认待处理状态
-    )
-    db.session.add(new_order)
-    db.session.commit()
+            if existing_order:
+                return None, "已有待处理订单"
 
-    return {
-        "order_id": new_order.order_id,
-        "item_id": new_order.item_id,
-        "order_quantity": new_order.order_quantity,
-        "order_date": new_order.order_date,
-        "status": new_order.status
-    }, None
+            # 创建新订单
+            new_order = ReplenishmentOrder(
+                item_id=item_id,
+                order_quantity=order_quantity,
+                order_date=datetime.utcnow(),
+                status="pending"  # 默认待处理状态
+            )
+            db.session.add(new_order)
+            db.session.commit()
+
+        return {
+            "order_id": new_order.order_id,
+            "item_id": new_order.item_id,
+            "order_quantity": new_order.order_quantity,
+            "order_date": new_order.order_date,
+            "status": new_order.status
+        }, None
+    except Exception as e:
+        db.session.rollback()
+        return None, f"创建订单失败: {str(e)}"
 
 def update_inventory_after_order(order_id, status):
     """
