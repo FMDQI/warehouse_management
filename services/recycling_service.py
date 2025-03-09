@@ -63,6 +63,14 @@ class RecyclingService:
         return [{"item_id": item_id, "total_quantity": total_quantity or 0} for item_id, total_quantity in results]
 
 
+    @staticmethod
+    def add_recycling_record(item_id, quantity, recycle_date):
+        """添加回收记录"""
+        new_record = RecyclingRecord(item_id=item_id, quantity=quantity, recycle_date=recycle_date)
+        db.session.add(new_record)
+        db.session.commit()
+        return new_record
+
 
 
 

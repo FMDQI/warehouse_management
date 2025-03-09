@@ -65,7 +65,19 @@ def get_recycling_quantity():
 
     return jsonify(data)
 
+@bp.route('/records', methods=['POST'])
+def add_recycling_record():
+    """添加回收记录"""
+    data = request.json
+    item_id = data.get("item_id")
+    quantity = data.get("quantity")
+    recycle_date = data.get("recycle_date")
 
+    if not item_id or not quantity or not recycle_date:
+        return jsonify({"message": "物品ID、数量和回收日期不能为空"}), 400
+
+    new_record = RecyclingService.add_recycling_record(item_id, quantity, recycle_date)
+    return jsonify({"record_id": new_record.record_id, "item_id": new_record.item_id, "quantity": new_record.quantity, "recycle_date": new_record.recycle_date}), 201
 
 
 
