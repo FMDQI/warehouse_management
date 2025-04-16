@@ -1,5 +1,5 @@
 ﻿# 数据库配置
-SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:13317038433@localhost/warehousemanagement'
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:MyNewPass@123@localhost/warehousemanagement'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # JWT 配置
